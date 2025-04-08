@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import GameSettings from '@/components/GameSettings';
 import socket from '@/lib/socket';
+import { faCopy } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 export default function GameRoom() {
   const { code } = useParams() as { code: string };
@@ -23,6 +25,7 @@ export default function GameRoom() {
     if (stored) setUser(JSON.parse(stored));
   }, []);
 
+
   useEffect(() => {
     if (!user) return;
 
@@ -39,6 +42,13 @@ export default function GameRoom() {
       isOwner,
     });
 
+    socket.emit('check-game-status', { roomId: code });
+
+    socket.on('game-status', ({ started }: { started: boolean }) => {
+      console.log('Game status on reload:', started);
+      setGameStarted(started);
+    });
+
     socket.on('player-joined', ({ players, owner }) => {
       setPlayers(players);
       setRoomOwner(owner);
@@ -48,13 +58,26 @@ export default function GameRoom() {
       setGameStarted(true);
     });
 
+    socket.on('room-not-found', () => {
+      alert('Owner left the room, lobby was destroyed.');
+      window.location.href = '/play';
+    });
+
+    socket.on('room-destroyed', () => {
+      alert('The lobby has been closed.');
+      window.location.href = '/play';
+    });
+
     const interval = setInterval(() => {
       setDotCount((prev) => (prev === 3 ? 1 : prev + 1));
     }, 500);
 
     return () => {
+      socket.off('game-status');
       socket.off('player-joined');
       socket.off('game-started');
+      socket.off('room-not-found');
+      socket.off('room-destroyed');
       clearInterval(interval);
       socket.disconnect();
     };
@@ -62,6 +85,13 @@ export default function GameRoom() {
 
   const startGame = () => {
     socket.emit('start-game', { roomId: code });
+  };
+
+  const leaveLobby = () => {
+    socket.emit('leave-room', { roomId: code });
+    sessionStorage.removeItem('certamen-user');
+    sessionStorage.removeItem('certamen-is-owner');
+    window.location.href = '/play';
   };
 
   return (
@@ -79,6 +109,9 @@ export default function GameRoom() {
                     {p.name === roomOwner && (
                       <span className="ml-1 text-xs text-indigo-600">(owner)</span>
                     )}
+                    {p.name === user?.username && (
+                      <span className="ml-1 text-xs text-zinc-500">(you)</span>
+                    )}
                   </div>
                   <div className="text-sm text-gray-500">{p.division}</div>
                   <div className="text-xs text-gray-400">
@@ -91,20 +124,45 @@ export default function GameRoom() {
 
           <GameSettings isOwner={isOwner} />
 
+          <div className="mt-6 flex items-center gap-2 text-sm text-gray-500">
+            <span>
+              Invite your friends to play with the code: <span className="font-mono">{code}</span>
+            </span>
+            <button
+              onClick={() => navigator.clipboard.writeText(code)}
+              className="text-indigo-600 hover:text-indigo-800"
+            >
+              <FontAwesomeIcon icon={faCopy} />
+            </button>
+          </div>
+
           {players.length < 2 ? (
             <div className="w-full text-center text-gray-500 text-sm mt-4">
               Waiting for players{waitingText}
             </div>
           ) : (
-            isOwner && (
-              <button
-                onClick={startGame}
-                className="w-full bg-indigo-500 text-white py-2 rounded-md hover:bg-indigo-600 transition duration-300"
-              >
-                Start Game
-              </button>
-            )
+            <>
+              {isOwner ? (
+                <button
+                  onClick={startGame}
+                  className="w-full bg-indigo-500 text-white py-2 rounded-md hover:bg-indigo-600 transition duration-300 mt-4"
+                >
+                  Start Game
+                </button>
+              ) : (
+                <div className="w-full text-center text-gray-500 text-sm mt-4">
+                  Waiting for owner to start game{waitingText}
+                </div>
+              )}
+            </>
           )}
+
+          <button
+            onClick={leaveLobby}
+            className="mt-4 text-sm text-red-500 underline"
+          >
+            Leave Lobby
+          </button>
         </div>
       ) : (
         <div className="text-center text-2xl text-green-600 mt-32 font-bold">

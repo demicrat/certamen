@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { checkRoomExists } from '@/lib/checkRoomExists';
 import axios from 'axios';
 
 export default function PlayPage() {
@@ -82,12 +83,24 @@ export default function PlayPage() {
     redirectWithSessionInfo(generatedCode, true);
   };
 
-  const joinGame = () => {
+  const joinGame = async () => {
+    const joinedCode = code.join('');
+    if (joinedCode.length === 4) {
+      const exists = await checkRoomExists(joinedCode);
+      if (!exists) {
+        alert('That game room does not exist.');
+        return;
+      }
+
+      redirectWithSessionInfo(joinedCode, false);
+    }
+  };
+  /*const joinGame = () => {
     const joinedCode = code.join('');
     if (joinedCode.length === 4) {
       redirectWithSessionInfo(joinedCode, false);
     }
-  };
+  };*/
 
   return (
     <div className="max-w-md mx-auto mt-12 p-6">
