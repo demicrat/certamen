@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { ReactNode } from "react";
 import TopNavbar from "@/components/TopNavbar";
 import BottomNavbar from "@/components/BottomNavbar";
@@ -9,12 +10,7 @@ const DashboardLayout = async ({ children }: { children: ReactNode }) => {
 
   if (!session || !session.user) {
     // If no session, redirect to sign-in page
-    return (
-      <div>
-        <p>Redirecting...</p>
-        <meta httpEquiv="refresh" content="0; url=/auth/signin" />
-      </div>
-    );
+    redirect("/auth/signin");
   }
  
   const user = {
@@ -32,7 +28,7 @@ const DashboardLayout = async ({ children }: { children: ReactNode }) => {
     lessons: session.user.lessons,
     characters: session.user.characters,
     team: session.user.team,
-    profilePic: session.user.profile ? `/${session.user.profile}.jpg` : "/path/to/profile-pic.jpg",
+    profilePic: session.user.profile ? `/${session.user.profile}.jpg` : "/default.jpg",
   };
 
   /*const user = {
@@ -41,13 +37,13 @@ const DashboardLayout = async ({ children }: { children: ReactNode }) => {
     coins: session.user.coins !== undefined ? session.user.coins : 0,
     profilePic: session.user.profile
       ? `/${session.user.profile}.jpg`
-      : "/path/to/profile-pic.jpg",
+      : "/default.jpg",
   };*/
 
   return (
     <div className="min-h-screen flex flex-col">
       <TopNavbar />
-      <main className="flex-1 bg-stone-100">{children}</main>
+      <main className="dashboard-main">{children}</main>
       <BottomNavbar user={user} />
     </div>
   );

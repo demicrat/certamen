@@ -1,6 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useSession, getSession, signIn } from 'next-auth/react';
+import TopNavbar from '@/components/TopNavbar';
 import SideNavbar from '@/components/SideNavbar';
 import Input from '@/components/FormTextInput';
 import Textarea from '@/components/Textarea';
@@ -99,12 +100,12 @@ const ProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen">
+    <><TopNavbar /><div className="settings-shell">
       <SideNavbar selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
-      <div className="flex-1 p-10 bg-beige-200 ml-[20%]">
+      <div className="settings-content">
         {selectedTab === 'profile' && (
           <>
-            <h1 className="text-3xl mb-6">Profile</h1>
+            <span className="eyebrow">THE MIND BEHIND THE BUZZER</span><h1 className="mt-3">Your player card</h1><div className="profile-overview"><Image src="/default.jpg" width={110} height={110} alt="Player avatar" className="rounded-full" /><h2>{username || session?.user.username || "Player"}</h2><span className="pill">{division || "Set your division in account settings"}</span><p className="mt-5">{bio || "Your next great rivalry starts here."}</p><div className="profile-tags">{specialties.map(s => <span key={s} className="pill">{s}</span>)}</div><div className="profile-stats"><div><strong>{session?.user.level || 1}</strong><span>LEVEL</span></div><div><strong>{session?.user.xp || 0}</strong><span>EXPERIENCE</span></div><div><strong>{session?.user.coins || 0}</strong><span>COINS</span></div></div><button className="btn btn-primary" onClick={() => setSelectedTab("account-info")}>Edit player details</button></div>
           </>
         )}
         {selectedTab === 'account-info' && (
@@ -217,7 +218,7 @@ const ProfilePage: React.FC = () => {
         />
       )}
 
-    </div>
+    </div></>
   );
 };
 

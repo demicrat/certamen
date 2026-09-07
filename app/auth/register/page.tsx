@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
 import { auth } from '@/lib/firebaseClient';
 import Input from '@/components/FormTextInput';
@@ -262,6 +263,7 @@ export default function Register() {
             Sign Up with Google
           </button>
         </div>)}
+        <p className="small-note text-center">Already in the game? <Link href="/auth/signin" className="text-indigo-600">Sign in</Link></p>
       </div>
     </div>
   );

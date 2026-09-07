@@ -119,14 +119,7 @@ export default function SignIn() {
             <FormButton text="Log In" style="text-white bg-indigo-600 hover:bg-indigo-400" />
             <FormButton text="With Google" style="border-indigo-600 text-gray-800 bg-beige-300 hover:bg-beige-500" onClick={signInWithGoogle/*() => signIn("google")*/} type="button" />
           </div>
-          <div className="mt-4">
-            <Link
-              href="#"
-              className="text-sm text-indigo-600 hover:underline"
-            >
-              Forgot your password?
-            </Link>
-          </div>
+
         </form>
         <p className="mt-4 text-sm text-center text-gray-600">
           Need an account?{" "}

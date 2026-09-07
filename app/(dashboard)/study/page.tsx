@@ -1,82 +1,19 @@
-// pages/study.tsx
 'use client';
-import { useState, useEffect } from 'react';
-import axios from 'axios';
-import StudyBox from '@/components/StudyBox';
-import Header from '@/components/Header';
 import Link from 'next/link';
-
-type Specialty = 'myth' | 'history' | 'literature' | 'pmaq' | 'vocab' | 'grammar' | 'culture';
-
-const StudyPage: React.FC = () => {
-  const [username, setUsername] = useState('');
-  const [division, setDivision] = useState('');
-  const [specialties, setSpecialties] = useState<string[]>([]);
-  const [lessons, setLessons] = useState<string[]>([]);
- 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const session = await axios.get('/api/auth/session'); // Assuming you have an endpoint to get session data
-        if (session && session.data.user)
-        {
-          const res = await axios.get(`/api/user/${session.data.user.id}`);
-          const userData = res.data;
-
-          setUsername(userData.username);
-          setDivision(userData.division);
-          setSpecialties(userData.specialties);
-          setLessons(userData.lessons || []);
-          /*setUsername(session.data.user.username);
-          setDivision(session.data.user.division);
-          setSpecialties(session.data.user.specialties);
-          setLessons(session.data.user.lessons);*/
-        }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      }
-    };
-
-    fetchUserData();
-  }, []);
-
-  return (
-    <div className="min-h-screen">
-      <Header username={username} />
-      <div className="p-4">
-        <h2 className="text-3xl mt-20 ml-20 font-bold">Study</h2>
-        {(!division && specialties.length === 0) && (
-          <div className="ml-20 mt-10">
-            <p>You currently don't have any specialties or division set. Go to <Link href="/settings" className="text-indigo-600 underline transition duration-300 hover:text-indigo-400">settings</Link> to do that.</p>
-          </div>
-        )}
-        {!division && specialties.length > 0 && (
-          <div className="ml-20 mt-10">
-            <p>You currently don't have a division set. Go to <Link href="/settings" className="text-indigo-600 underline transition duration-300 hover:text-indigo-400">settings</Link> to do that.</p>
-          </div>
-        )}
-        {division && specialties.length === 0 && (
-          <div className="ml-20 mt-10">
-            <p>You currently don't have any specialties set. Go to <Link href="/settings" className="text-indigo-600 underline transition duration-300 hover:text-indigo-400">settings</Link> to do that.</p>
-          </div>
-        )}
-        {division && specialties.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-10 ml-20">
-            {specialties.map((specialty) => (
-              <StudyBox key={specialty} specialty={specialty} lessons={lessons}/>
-            ))}
-          </div>
-        )}
-      </div>
-      <div className="p-4">
-        <h2 className="text-3xl mt-20 ml-20 font-bold">Practice</h2>
-        <br />
-        <br />
-        <br />
-        <br />
-      </div>
-    </div>
-  );
-};
-
-export default StudyPage;
+import { ArrowRight, BookOpen, Sparkles } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import { useUser } from '@/context/UserContext';
+const subjects = [
+ ['history', 'Roman history', 'From the kings of Rome to the fall of an empire. Know the moments that mattered.'],
+ ['myth', 'Mythology', 'Gods, monsters, heroes, and the stories that refuse to get old.'],
+ ['literature', 'Literature', 'Meet the poets, playwrights, and epic storytellers of the ancient world.'],
+ ['vocab', 'Latin vocabulary', 'Small words. Big advantages. Build a vocabulary that travels through time.'],
+ ['grammar', 'Latin grammar', 'Cases, clauses, and conjugations. Put every piece in its place.'],
+ ['culture', 'Roman culture', 'Step into the homes, forums, and everyday lives of the Romans.'],
+ ['pmaq', 'Phrases & mottos', 'The little Latin expressions that leave a lasting impression.'],
+];
+export default function StudyPage() {
+ const { data: session } = useSession(); const { userData } = useUser();
+ const completed = (userData?.lessons || []).filter((l: string) => l.endsWith('-complete')).length;
+ return <div className="page-wrap"><section className="training-hero"><div><span className="eyebrow"><Sparkles size={15} /> THE TRAINING GROUND</span><h1>Hey, {session?.user.username || 'scholar'}.<br />Let’s build your edge.</h1><p>Every great buzz starts with a little curiosity.<br />Pick a subject and make your next round count.</p></div><BookOpen size={105} strokeWidth={1.1} /></section><div className="panel-title"><h2>Choose your discipline</h2><span className="pill">{completed} LESSON{completed === 1 ? '' : 'S'} COMPLETE</span></div><div className="study-grid">{subjects.map(([id, title, description], i) => <Link href={'/study/' + id} className="study-card" key={id}><span className="study-number">DISCIPLINE {String(i + 1).padStart(2, '0')}{userData?.specialties?.includes(id) ? ' · YOUR SPECIALTY' : ''}</span><h3>{title}</h3><p>{description}</p><span className="study-link">{id === 'history' ? 'Explore lessons' : 'Explore discipline'}<ArrowRight size={17} /></span></Link>)}</div><section className="practice-strip"><div><h3>Put that knowledge to the test.</h3><p>Your next great “I knew that!” moment is waiting in the arena.</p></div><Link className="btn btn-primary" href="/play">Time to compete <ArrowRight size={18} /></Link></section></div>;
+}

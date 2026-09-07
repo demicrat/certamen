@@ -3,10 +3,10 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 
-export async function GET(req: NextRequest, { params }: { params: { category: string, lesson: string } }) {
-  let { category, lesson } = params;
+export async function GET(req: NextRequest, { params }: { params: Promise<{ category: string, lesson: string }> }) {
+  let { category, lesson } = await params;
 
-  if (!category || !lesson) {
+  if (!/^[a-z0-9-]+$/i.test(category) || !/^[a-z0-9-]+$/i.test(lesson)) {
     return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
   }
 

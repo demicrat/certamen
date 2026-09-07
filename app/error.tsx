@@ -1,0 +1,2 @@
+'use client';
+export default function ErrorPage({ reset }: { reset: () => void }) { return <main className="page-wrap"><section className="panel empty-state"><span className="eyebrow">A QUICK TIMEOUT</span><h1 className="mt-5">Something interrupted the round.</h1><p>Please try again to get back in the game.</p><button className="btn btn-primary" onClick={reset}>Try again</button></section></main>; }

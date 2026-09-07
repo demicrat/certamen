@@ -1,37 +1,6 @@
-// app/page.tsx
-import React from 'react';
 import Link from 'next/link';
-import LightButton from '../components/LightButton';
-import DarkButton from '../components/DarkButton';
-import Head from 'next/head';
-
-const HomePage: React.FC = () => {
-  return (
-    <>
-      <Head>
-        <title> certamen. </title>
-      </Head>
-      <div className="min-h-screen bg-beige-300 flex flex-col items-center">
-        <nav className="w-full flex justify-end p-6 space-x-4">
-          <LightButton text="Log In" link="/auth/signin"/>
-          <DarkButton text="Sign Up" link="/auth/register" color="gray"/>
-        </nav>
-        <div className="mt-24 text-center">
-          <h1 className="text-5xl font-bold mb-4">certamen.</h1>
-          <p className="text-lg text-gray-700 mb-2">
-            pursue your studies of the classics
-          </p>
-          <p className="text-lg text-gray-700 mb-8 italic">
-            discite ludendo :) 
-          </p>
-          <div className="flex space-x-4 justify-center">
-            <DarkButton text="Study" link="/study" color="gray"/>
-            <LightButton text="Play" link="/play" />
-          </div>
-        </div>
-      </div>
-    </>
-  );
-};
-
-export default HomePage;
+import { ArrowRight, BookOpen, Trophy, Zap, Sparkles, Globe2 } from 'lucide-react';
+import TopNavbar from '@/components/TopNavbar';
+export default function HomePage() {
+ return <><TopNavbar publicNav /><main className="home-page"><section className="home-hero"><div><span className="eyebrow"><span className="live-dot" /> CLASSICS. COMPETITION. A LITTLE CHAOS.</span><h1>Ancient world.<br />Modern <em>rivalries.</em></h1><p className="hero-description">Big myths. Quick minds. One buzzer.<br />Turn what you know into your next great win.</p><div className="button-row"><Link className="btn btn-primary" href="/play">Enter the arena <ArrowRight size={19} /></Link><Link className="btn" href="/study">Warm up first <BookOpen size={18} /></Link></div><p className="small-note">Discite ludendo. Learn by playing.</p></div><div className="hero-art" aria-label="Illustrated Certamen competition scoreboard"><div className="floating-badge badge-top"><Sparkles size={17} /> KNOWLEDGE IS YOUR SUPERPOWER</div><div className="arena-preview"><div className="preview-top"><span className="eyebrow">THE ARENA</span><span className="pill lime">LIVE ROUND</span></div><Trophy className="hero-trophy" size={94} strokeWidth={1.3} /><h2>Fortune favors<br />the <em>fast.</em></h2><div className="preview-scores"><div><span>ATHENA</span><strong>120</strong></div><span className="versus">VS</span><div><span>APOLLO</span><strong>110</strong></div></div><div className="preview-buzzer"><Zap size={20} fill="currentColor" /> SPACE TO BUZZ</div></div><div className="floating-badge badge-bottom">+10 POINTS <span>Nicely played.</span></div><span className="art-star">✳</span></div></section><section className="home-bottom"><div className="section-intro"><span className="eyebrow">YOUR NEXT GREAT ROUND STARTS HERE</span><h2>A little study. A lot of game.</h2></div><div className="feature-grid">{[{ Icon: BookOpen, title: 'Build your edge', text: 'Explore the classics and turn your weak spots into specialties.', href: '/study', label: 'Hit the training ground' }, { Icon: Zap, title: 'Beat the buzzer', text: 'Read the clues, trust your instincts, and claim your moment.', href: '/play', label: 'Find your next match' }, { Icon: Globe2, title: 'Bring your rivals', text: 'Create a room, share the code, and let the friendly competition begin.', href: '/play', label: 'Host a competition' }].map(({ Icon, title, text, href, label }, i) => <Link href={href} className={`feature-card feature-${i}`} key={title}><Icon size={26} /><h3>{title}</h3><p>{text}</p><span>{label}<ArrowRight size={17} /></span></Link>)}</div></section><footer className="home-footer"><span className="brand">certamen.</span><span>Old knowledge. New bragging rights.</span><Link href="/auth/register">Join the game ↗</Link></footer></main></>;
+}

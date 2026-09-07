@@ -1,139 +1,24 @@
 'use client';
 import { useParams } from 'next/navigation';
-import dynamic from 'next/dynamic';
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import matter from 'gray-matter';
+import { useSession } from 'next-auth/react';
+import { useQuery } from '@tanstack/react-query';
+import Link from 'next/link';
+import { ArrowLeft, BookOpen } from 'lucide-react';
 import Markdown from 'markdown-to-jsx';
 import TableOfContents from '@/components/TableOfContents';
-import { useQuery } from '@tanstack/react-query';
-import PrevButton from '@/components/PrevButton';
-import NextButton from '@/components/NextButton';
 import LessonProgressDropdown from '@/components/LessonProgressDropdown';
-
-const DynamicLessonsNavBar = dynamic(() => import('@/components/LessonsNavBar'), { ssr: false });
-
-const fetchLesson = async (category: string, lesson: string) => {
-  const res = await axios.get(`/lessons/${category}/${lesson}.md`);
-  const parsed = matter(res.data);
-  return {
-    title: parsed.data.title,
-    description: parsed.data.description,
-    frequency: parsed.data.frequency,
-    author: parsed.data.author,
-    content: parsed.content,
-  };
-};
-
-const fetchLessonStatus = async (userId: string, category: string, lesson: string) => {
-  const res = await axios.get(`/api/user/${userId}/progress`, {
-    params: { category, lesson }
-  });
-  return res.data.status || 'unstarted';
-};
-
-const StudyLessonPage: React.FC = () => {
-  const totalLessons = 5;
-  const [userId, setUserId] = useState<string>('');
-
-  const params = useParams<{ category: string; lesson: string }>();
-  const categoryRaw = params?.category ?? '';
-  const lessonRaw = params?.lesson ?? '';
-
-  const categoryParam = Array.isArray(categoryRaw) ? categoryRaw[0] : categoryRaw;
-  const lessonParam = Array.isArray(lessonRaw) ? lessonRaw[0] : lessonRaw;
-  const currentLessonNumber = parseInt(lessonParam, 10);
-
-  useEffect(() => {
-    const fetchUserId = async () => {
-      try {
-        // Fetch the session data
-        const session = await axios.get('/api/auth/session');
-        
-        if (session && session.data.user) {
-          // Extract only the userId from the session
-          const userid = session.data.user.id;
-          
-          // Set the userId in state
-          setUserId(userid);
-        }
-      } catch (error) {
-        console.error('Error fetching user ID from session:', error);
-      }
-    };
-
-    fetchUserId();
-  }, []);
-
-  const { data, isLoading } = useQuery({
-    queryKey: ['lessonData', categoryParam, lessonParam],
-    queryFn: () => fetchLesson(categoryParam as string, lessonParam as string),
-    enabled: !!categoryParam && !!lessonParam,  // Enable query when params are available
-  });
-
-  const { data: lessonStatus, isLoading: statusLoading } = useQuery({
-    queryKey: ['lessonStatus', userId, categoryParam, lessonParam],
-    queryFn: () => fetchLessonStatus(userId, categoryParam as string, lessonParam as string),
-    enabled: !!userId && !!categoryParam && !!lessonParam,  // Enable query when params are available
-  });
-
-  if (isLoading || statusLoading) return <div>Loading...</div>;
-
-  if (!data) return <div>No data available</div>;
-
-  const { title, description, frequency, author, content } = data;
-
-  const getFrequencyClass = (frequency: string) => {
-    switch (frequency.toLowerCase()) {
-      case 'high':
-        return 'text-fuchsia-500';
-      case 'medium':
-        return 'text-blue-500';
-      case 'low':
-        return 'text-purple-500';
-      default:
-        return '';
-    }
-  };
-
-  return (
-    <div className="flex">
-      <DynamicLessonsNavBar />
-      <div className="flex-1 p-4 ml-72">
-        <div className="flex justify-between mb-4">
-          <PrevButton currentLessonNumber={currentLessonNumber} category={categoryParam} />
-          <NextButton currentLessonNumber={currentLessonNumber} category={categoryParam} totalLessons={totalLessons} />
-        </div>
-        {frequency && <p className={`text-md mt-12 mb-2 ${getFrequencyClass(frequency)}`}>Frequency: {frequency}</p>}
-        <h1 className="text-4xl font-bold mb-4">{title}</h1>
-        {author && <p className="text-md mb-4 text-gray-600">Author(s): {author}</p>}
-        <p className="italic text-md mb-4">{description}</p>
-        <LessonProgressDropdown
-          userId={userId}
-          category={categoryParam}
-          lesson={lessonParam}
-          initialStatus={lessonStatus} // Assuming the status is fetched from the API
-        />
-        <div className="mt-10 border border-gray-300 rounded-md p-4 mb-8 w-5/12">
-          <TableOfContents content={content} />
-        </div>
-        <div className="prose mt-4 w-9/12">
-          <Markdown options={{ 
-            overrides: {
-              h1: { component: 'h1', props: { className: 'text-3xl font-bold mt-8 mb-4' } },
-              h2: { component: 'h2', props: { className: 'text-2xl font-bold mt-6 mb-4' } },
-              h3: { component: 'h3', props: { className: 'text-xl font-bold mt-4 mb-4' } },
-            } 
-          }}>
-            {content}
-          </Markdown>
-        </div>
-        <br />
-        <br />
-        <br />
-      </div>
-    </div>
-  );
-};
-
-export default StudyLessonPage;
+export default function StudyLessonPage() {
+ const { category, lesson } = useParams<{ category: string; lesson: string }>()!;
+ const { data: session } = useSession(); const userId = session?.user.id || '';
+ const { data, isPending, error, refetch } = useQuery({ queryKey: ['lesson', category, lesson], queryFn: async () => {
+  const res = await fetch('/api/lessons/' + encodeURIComponent(category) + '/' + encodeURIComponent(lesson));
+  if (!res.ok) throw new Error(res.status === 404 ? 'This lesson is not available.' : 'Could not load the lesson. Please try again.');
+  return res.json();
+ } });
+ const { data: progress, isPending: progressPending, error: progressError } = useQuery({ queryKey: ['lessonStatus', userId, category, lesson], enabled: !!userId, queryFn: async () => {
+  const res = await fetch('/api/user/' + userId + '/progress?' + new URLSearchParams({ category, lesson }));
+  if (!res.ok) throw new Error('Progress could not load. Refresh before changing your status.');
+  return res.json();
+ } });
+ return <div className="page-wrap"><Link className="lesson-back" href={'/study/' + category}><ArrowLeft size={16} /> Back to lessons</Link>{isPending ? <div className="panel" role="status">Opening the booksÃ¢â‚¬Â¦</div> : error ? <div className="panel empty-state"><BookOpen size={40} /><h2>LetÃ¢â‚¬â„¢s get you back on track.</h2><p role="alert">{error.message}</p><button className="btn" onClick={() => refetch()}>Try again</button></div> : <div className="lesson-page"><aside className="panel lesson-toc"><span className="eyebrow">IN THIS LESSON</span><TableOfContents content={data.content || ''} /></aside><article className="panel lesson-article"><span className="eyebrow">THE TRAINING GROUND Ã‚Â· LESSON {lesson}</span><h1>{data.title}</h1><p className="description">{data.description}</p>{data.author && <p className="small-note">By {data.author}</p>}<div className="my-6">{progressError ? <p role="alert">{progressError.message}</p> : progressPending ? <p className="small-note">Loading your progressÃ¢â‚¬Â¦</p> : <LessonProgressDropdown key={category + lesson + progress?.status} userId={userId} category={category} lesson={lesson} initialStatus={progress?.status || 'unstarted'} />}</div><div className="lesson-content"><Markdown options={{ slugify: text => text.toLowerCase().replace(/[^a-z0-9]+/g, "-") }}>{data.content || ''}</Markdown></div><Link className="btn" href={'/study/' + category}>Back to your learning path</Link></article></div>}</div>;
+}

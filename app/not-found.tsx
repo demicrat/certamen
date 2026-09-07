@@ -1,0 +1,3 @@
+import Link from 'next/link';
+import TopNavbar from '@/components/TopNavbar';
+export default function NotFound() { return <><TopNavbar publicNav /><main className="page-wrap"><section className="panel empty-state"><span className="eyebrow">404 · OUT OF BOUNDS</span><h1 className="mt-5">That page left the arena.</h1><p>Let’s get you back in the game.</p><Link href="/" className="btn btn-primary">Back to home</Link></section></main></>; }

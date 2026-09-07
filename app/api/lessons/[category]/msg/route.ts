@@ -4,10 +4,10 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 
-export async function GET(req: NextRequest, { params }: { params: { category: string } }) {
-  let { category } = params;
+export async function GET(req: NextRequest, { params }: { params: Promise<{ category: string }> }) {
+  let { category } = await params;
 
-  if (!category) {
+  if (!/^[a-z0-9-]+$/i.test(category)) {
     return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
   }
 

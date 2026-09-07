@@ -5,14 +5,15 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions'; // Adjust the path if necessary
 import { encode } from 'next-auth/jwt';
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const token = await getToken({ req });
 
   if (!token) {
     return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
   }
 
-  const { id } = params;
+  const { id } = await params;
+  if (token.id !== id) return NextResponse.json({ message: "Not authorized" }, { status: 403 });
 
   try {
     //console.log(`Fetching user with ID: ${id}`); // Log the ID being fetched
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 
-    const user = userDoc.data();
+    const { password: _password, ...user } = userDoc.data() || {};
     //console.log(`User data: ${JSON.stringify(user)}`); // Log the user data being returned
     return NextResponse.json(user, { status: 200 });
   } catch (error) {
@@ -32,23 +33,22 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const token = await getToken({ req });
 
   if (!token) {
     return NextResponse.json({ message: 'Not authenticated' }, { status: 401 });
   }
 
-  const { id } = params;
+  const { id } = await params;
+  if (token.id !== id) return NextResponse.json({ message: "Not authorized" }, { status: 403 });
   const body = await req.json();
   const { username, bio, division, specialties } = body;
 
   try {
-    console.log(`Updating user with ID: ${id}`); // Log the ID being updated
     const userDoc = await db.collection('users').doc(id).get();
 
     if (!userDoc.exists) {
-      console.log(`User with ID ${id} not found`); // Log if the user is not found
       return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
 
@@ -62,8 +62,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
     await db.collection('users').doc(id).update(updatedUser);
 
     const updatedDoc = await db.collection('users').doc(id).get(); // Fetch updated data
-    const updatedUserData = updatedDoc.data();
-    console.log(`Updated user data: ${JSON.stringify(updatedUserData)}`); // Log updated user data
+    const { password: _password, ...updatedUserData } = updatedDoc.data() || {};
     
     //const session = await getServerSession({ req, authOptions });
     const newToken = await encode({
