@@ -8,7 +8,7 @@
                     "start":  "next start",
                     "lint":  "eslint .",
                     "typecheck":  "tsc --noEmit",
-                    "test":  "tsx --test tests/competition.test.ts tests/socket.test.ts",
+                    "test":  "tsx --test tests/competition.test.ts tests/socket.test.ts tests/practice.test.ts",
                     "test:e2e":  "playwright test"
                 },
     "dependencies":  {

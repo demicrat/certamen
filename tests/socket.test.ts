@@ -39,6 +39,11 @@ test('real sockets synchronize first buzz, resume, scores, reconnection and room
   const submitted = state(host, g => g.phase === 'judging'); b.emit('game-action', { type: 'answer', answer: 'My answer' }); assert.equal((await submitted).submission, 'My answer');
   const scored = state(a, g => g.phase === 'revealed'); host.emit('game-action', { type: 'judge', correct: true }); const scores = await scored; assert.equal(scores.players.find(p => p.id === 'b')?.score, 10); assert.ok(scores.answer);
   b.disconnect(); const reconnected = await createClient('b'); const recovered = state(reconnected, g => g.phase === 'revealed'); await reconnected.emitWithAck('join-room', { code: room.code }); assert.equal((await recovered).players.find(p => p.id === 'b')?.score, 10);
+  for (let bonus = 1; bonus <= 2; bonus++) {
+   const nextBonus = state(a, g => g.phase === 'reading' && g.bonusNumber === bonus); host.emit('game-action', { type: 'next' });
+   const view = await nextBonus; assert.equal(view.points, 5); assert.deepEqual(view.eligibleIds, ['b']);
+   const passed = state(a, g => g.phase === 'revealed'); host.emit('game-action', { type: 'skip' }); await passed;
+  }
   const finished = state(a, g => g.phase === 'finished'); host.emit('game-action', { type: 'next' }); await finished;
   const closed = new Promise<void>(resolve => a.once('room-closed', resolve)); host.emit('leave-room'); await closed;
   assert.match((await a.emitWithAck('join-room', { code: room.code })).error, /Room not found/);

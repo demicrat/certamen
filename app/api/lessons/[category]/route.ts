@@ -17,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ cate
     return NextResponse.json({ error: 'Category not found' }, { status: 404 });
   }
 
-  const lessonFiles = fs.readdirSync(lessonsDir).filter(file => file.endsWith('.md'));
+  const lessonFiles = fs.readdirSync(lessonsDir).filter(file => file.endsWith('.md')).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   const totalLessons = lessonFiles.length;
 
   return NextResponse.json({ totalLessons, lessonFiles });

@@ -1,6 +1,6 @@
 import type { Server, Socket } from 'socket.io';
 import { randomInt } from 'node:crypto';
-import { Competition } from './competition';
+import { Competition, type GameMode } from './competition';
 import { practicePack } from './question-pack';
 
 export function attachCompetitionServer(io: Server) {
@@ -8,7 +8,11 @@ export function attachCompetitionServer(io: Server) {
   const sockets = new Map<string, Socket>();
   const cleanup = new Map<string, ReturnType<typeof setTimeout>>();
   const publish = (room: Competition) => {
-    for (const socket of sockets.values()) if (socket.data.room === room.code) socket.emit('room-state', room.view(socket.data.userId, Date.now()));
+    const now = Date.now();
+    for (const socketId of io.sockets.adapter.rooms.get(room.code) || []) {
+      const socket = sockets.get(socketId);
+      if (socket) socket.emit('room-state', room.view(socket.data.userId, now));
+    }
   };
   const destroy = (code: string) => {
     for (const socket of sockets.values()) if (socket.data.room === code) { socket.emit('room-closed'); socket.leave(code); socket.data.room = undefined; }
@@ -38,11 +42,13 @@ export function attachCompetitionServer(io: Server) {
       if (room.hostId === id) { const timer = cleanup.get(room.code); if (timer) clearTimeout(timer); cleanup.delete(room.code); }
       publish(room);
     };
-    socket.on('create-room', (_payload, reply) => {
+    socket.on('create-room', (payload, reply) => {
       try {
         if (rooms.size >= 500) throw new Error('The arena is busy. Please try again later.');
         let code: string; do { code = Array.from({ length: 4 }, () => String.fromCharCode(65 + randomInt(26))).join(''); } while (rooms.has(code));
-        const room = new Competition(code, id, practicePack); rooms.set(code, room); enter(room);
+        const mode = payload?.mode ?? 'teams';
+        if (!['solo', 'pvp', 'teams'].includes(mode)) throw new Error('Choose Solo, PvP, or Teams.');
+        const room = new Competition(code, id, practicePack, mode as GameMode); rooms.set(code, room); enter(room);
         if (typeof reply === 'function') reply({ code });
       } catch (e) { if (typeof reply === 'function') reply({ error: (e as Error).message }); }
     });
@@ -58,6 +64,8 @@ export function attachCompetitionServer(io: Server) {
         const room = roomFor(); const now = Date.now();
         switch (payload?.type) {
           case 'settings': room.configure(id, payload.settings || {}); break;
+          case 'add-team': room.addTeam(id, payload.name); break;
+          case 'move-team': room.moveTeam(id, payload.playerId, payload.teamId); break;
           case 'start': room.start(id, now); break;
           case 'buzz': room.buzz(id, now); break;
           case 'answer': room.submit(id, payload.answer, now); break;

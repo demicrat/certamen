@@ -13,7 +13,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ cate
   category = category.toLowerCase();
 
   const filePath = path.join(process.cwd(), `public/lessons/${category}/${lesson}.md`);
-  console.log(filePath);
   if (!fs.existsSync(filePath)) {
     return NextResponse.json({ error: 'Lesson not found' }, { status: 404 });
   }
@@ -21,5 +20,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ cate
   const fileContent = fs.readFileSync(filePath, 'utf8');
   const { data, content } = matter(fileContent);
 
-  return NextResponse.json({ ...data, content });
+  const next = String(Number(lesson) + 1);
+  const nextLesson = /^\d+$/.test(lesson) && fs.existsSync(path.join(path.dirname(filePath), next + '.md')) ? next : null;
+  return NextResponse.json({ ...data, content, nextLesson });
 }
